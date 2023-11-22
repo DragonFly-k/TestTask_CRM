@@ -1,0 +1,201 @@
+﻿@using TestTask_CRM.Models
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Index</title>
+    <style type="text/css">
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        * {
+            font-size: 14pt;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            background-color: #fff;
+            z-index: 1000;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        input {
+            margin-top: 5px;
+        }
+
+        input[type="submit"] {
+            background-color: #008CBA;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #007B9F;
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    <div>
+        <table>
+            <tr>
+                <th><p>ID</p></th>
+                <th><p>Name</p></th>
+                <th><p>MobilePhone</p></th>
+                <th><p>JobTitle</p></th>
+                <th><p>BirthDate</p></th>
+                <th><p>Actions</p></th>
+            </tr>
+            @foreach (TestTask_CRM.Models.Contact d in ViewBag.data)
+            {
+                <tr>
+                    <td><p style="text-align:center">@d.Id</p></td>
+                    <td><p>@d.Name</p></td>
+                    <td><p>@d.MobilePhone</p></td>
+                    <td><p>@d.JobTitle</p></td>
+                    <td><p>@d.BirthDate.ToShortDateString()</p></td>
+                    <td>
+                        <button type="button" onclick="openModal('updateModal_@d.Id')">Изменить</button>
+
+                        <div class="modal" id="updateModal_@d.Id">
+                            <span class="close" onclick="closeModal('updateModal_@d.Id')">x</span>
+                            <h3>Изменить контакт</h3>
+                            <form method="post" action="/Contact/Update" onsubmit="return validateForm('Update', '@d.Id')">
+                                <input type="hidden" name="id" value="@d.Id" />
+                                <input type="text" name="Name" placeholder="Name" value="@d.Name" id="UpdName_@d.Id" required /><br />
+                                <input type="number" name="mobilePhone" placeholder="MobilePhone" value="@d.MobilePhone" id="UpdMobilePhone_@d.Id" required /><br />
+                                <input type="text" name="jobTitle" placeholder="JobTitle" value="@d.JobTitle" id="UpdJobTitle_@d.Id" required /><br />
+                                <input type="date" name="birthDate" value="@d.BirthDate.ToString("yyyy-MM-dd")" id="UpdBirthDate_@d.Id" required /><br />
+                                <input type="submit" value="Изменить"/>
+                            </form>
+                        </div>
+
+                        <form method="post" action="/Contact/Delete" style="display: inline;">
+                            <input type="hidden" name="id" value="@d.Id" />
+                            <button type="submit">Удалить</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </table>
+
+        <p>
+            <button type="button" onclick="openModal('addModal')">Добавить</button>
+
+            <div class="modal" id="addModal">
+                <span class="close" onclick="closeModal('addModal')">x</span>
+                <h3>Добавить контакт</h3>
+                <form method="post" action="/Contact/Add" onsubmit="return validateForm('Add')">
+                    <input type="text" name="Name" placeholder="Name" id="AddName" required /><br />
+                    <input type="number" name="mobilePhone" placeholder="MobilePhone" id="AddMobilePhone" required /><br />
+                    <input type="text" name="jobTitle" placeholder="JobTitle" id="AddJobTitle" required /><br />
+                    <input type="date" name="birthDate" id="AddBirthDate" required /><br />
+                    <input type="submit" value="Добавить"/>
+                </form>
+            </div>
+        </p>
+    </div>
+
+    <script>
+        function openModal(id) {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById(id).style.display = 'block';
+        }
+
+        function closeModal(id) {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById(id).style.display = 'none';
+            location.reload();
+        }
+
+        function validateForm(formType, recordId) {
+            var nameInput = document.getElementById(formType === 'Update' ? 'UpdName_' + recordId : 'AddName');
+            var nameRegex = /^[А-ЯA-Z][а-яa-z]+$/;
+
+            if (!nameRegex.test(nameInput.value)) {
+                alert('Имя должно начинаться с заглавной буквы, а остальные символы прописные, можно использовать кириллицу и латиницу. Минимум 2 символа.');
+                return false;
+            }
+
+            var mobilePhoneInput = document.getElementById(formType === 'Update' ? 'UpdMobilePhone_' + recordId : 'AddMobilePhone');
+            var phoneRegex = /^375\d{9}$/;
+
+            if (!phoneRegex.test(mobilePhoneInput.value)) {
+                alert('Некорректный номер телефона. Введите корректный номер, начиная с кода страны. 375xxxxxxxxx x=9');
+                return false;
+            }
+
+            var birthDateInput = document.getElementById(formType === 'Update' ? 'UpdBirthDate_' + recordId : 'AddBirthDate');
+            var currentDate = new Date();
+            var minBirthDate = new Date('1900-01-01');
+            if (new Date(birthDateInput.value) > currentDate || new Date(birthDateInput.value) < minBirthDate) {
+                alert('Дата рождения должна быть не меньше 01.01.1900 и не больше сегодняшней даты.');
+                return false;
+            }
+
+            return true;
+        }
+    </script>
+</body>
+</html>
